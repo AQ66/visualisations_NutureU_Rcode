@@ -1,0 +1,124 @@
+library(ggplot2) 
+library(plotly) 
+library(plyr) 
+library(flexdashboard) 
+library(scales) 
+library(webr) 
+library(dplyr)
+library(GGally)
+library(corrplot) 
+library(gridExtra) 
+
+#How old are you boxplot  
+boxplot(Book0$age_1, xaxt = "n", yaxt = "n", ylab = "Age", main = "How old are you?", col = "white") 
+axis(2, at = c(17:60), col = "blue", col.ticks = "green", col.axis = "red") 
+#or 
+ggplot(data = Book0) 
++ geom_boxplot(aes(y=age_1)) 
++ theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) 
++ ylab("Age") + scale_y_continuous(breaks = c(15, 20, 25, 30, 35, 40, 45, 50, 55)) 
++ ggtitle("How old are you?")
+
+#How old are you/ level of study boxplot
+ggplot(Book0, aes(x=age_1, y=undergard_or_grad_1, fill = undergard_or_grad_1)) 
++ geom_boxplot() 
++ scale_x_continuous(breaks = c(15, 20, 25, 30, 35, 40, 45, 50, 55)) 
++ xlab("Age") + ylab("Level of Study") 
++ ggtitle("How old are you? BY Is your course undergraduate or postgraduate?") 
++ theme(legend.position = "none") 
+
+#Gender and Sexual Orientation amongst sample 
+data1 <- factor(Book0$gender_t_1, levels = c("Female", "Male", "Non-binary", "N/A")) 
+ggplot(Book0, aes(x=data1, fill=sexual_orient_t_1)) 
++ geom_bar(position = "dodge") 
++ xlab("Gender") 
++ theme(axis.text.x=element_text(size=13, face="bold")) 
++ ggtitle("Gender and Sexual Orientation amongst our sample") 
+
+#International students and mental health/ learning difficulty diagnosis 
+ggplot(Book0, aes(dom_int_t_1, fill=Book0$mh_none_1)) 
++ geom_bar(aes(y=(..count..)/sum(..count..))) 
++ scale_y_continuous(labels=percent) 
++ ggtitle(label = "Please describe your current student status within the university:") 
++ labs(subtitle="Sample Total:516") 
++ xlab("student status") 
++ theme(axis.text.x=element_text(size=13, face="bold")) 
++ ylab("percent of total sample") 
++ guides(fill=guide_legend(title="Mental Health/ Learning Difficulties Diagnosis")) 
++ geom_label(aes(x=1, y=0.2, label="51%")) 
++ geom_label(aes(x=1, y=0.6, label="48%")) 
++ geom_label(aes(x=2, y=0.1, label = "74%")) 
++ geom_label(aes(x=2, y=0.21, label="23%")) 
+
+#Disability amongst the whole sample 
+ggplot(data = Book3) 
++ geom_bar(aes(x=disability_1)) 
++ ggtitle(label = "Do you have a disability?") 
++ theme_bw() 
++ geom_label(aes(x= 1, y = 200, label = "79%")) 
++ geom_label(aes(x=2, y = 50, label = "21%")) 
++ xlab(" ") + ylab("Count")
+
+#Gender amongst the whole sample  
+ggplot(data = Book4) 
++ geom_bar(aes(x=Book4$gender_t_1)) 
++ ggtitle(label = "How would you describe your gender?") 
++ theme_bw() 
++ geom_label(aes(x= 1, y = 200, label = "67%")) 
++ geom_label(aes(x=2, y = 50, label = "27%")) 
++ geom_label(aes(x=3, y = 50, label = "3%")) 
++ geom_label(aes(x=4, y = 50, label = "3%")) 
++ xlab(" ") 
++ ylab("Count") 
+
+#Disability and mental health none? i.e. Any Mental Health Conditions [MH] or Learning Difficulties [LD], by Disability") 
+PD <- Book6 
+PieDonut(PD, aes(Disability, mh_none_1, count=Freq), explode = 2, explodeDonut = TRUE, r0 = 0.45, r1 = 0.9, labelposition = 1) 
+
+#Diagnosis of Mental Health and Receipt of Treatment 
+PD2<-Book7 
+PieDonut(PD2, aes(Diagnosed_MHc_or_LD, MH_treat_ever_1, count=Freq), r0 = 0.69, r1 = 0.95, ratioByGroup = FALSE, explode = 2, 
+title = "Received treatment for a Mental Health Condition [MHc] by Diagnosed MHc or Learning Difficulties [LD]") 
+
+#Self-reported self-harm and Receipt of Treatment 
+PD3<-Book8 
+PieDonut(PD3, aes(Self_harm_Frequency, mh_treat_ever_1, count=Freq), r0 = 0.36, r1 = .96, ratioByGroup = FALSE, explode = 2:4, 
+explodeDonut = TRUE, title = "Received treatment for a Mental Health Condition by Self-harm Frequency") 
+
+#Current year of study by diagnosis of MHc/LD 
+PD4 <- Book9 
+Pl0 <- ggplot(data = PD4, aes(x=Current_Year_Of_Course, y = "", fill = Any_MHc_LD)) 
+Pl0 <- pl0 + geom_bar(aes(x = Current_Year_Of_Course, y = (..count..)/sum(..count..))) 
++ scale_y_continuous(labels = percent) + labs(title = "Current Year of Course by Diagnosis of Mental Health Condition(s)/ Learning Difficulties", subtitle = "Sample Total: 516") 
++ theme(plot.title = element_text(face="bold.italic", hjust = -0.2)) 
++ theme(axis.title.x = element_blank(), axis.title.y = element_blank()) 
++ coord_flip() 
+
+#using ggally to display multiple bivariate correlations within the same figure 
+ggpairs(Book10, upper=list(continuous = wrap("cor", stars = FALSE))) 
+#for a condensed version of the above  
+mixed_df <- Book10[,c("disability_1", "sexual_orient_1")] 
+ggpairs(mixed_df) 
+
+#using ggally for a correlation plot 
+ggcorr(Book10, palette = "RdBu", name="r squared", label = TRUE) 
+#or 
+corrplot(corr = cor(Book10), addCoef.col = "white", method = "color", type = "upper", tl.pos = "tl", order = "original", addgrid.col = "green") 
+
+#visualising graduate and faculty status together 
+pl <- ggplot() + geom_polygon(data = Book12, aes(Faculty,Percentage, group = id, fill = as.factor(id))) 
+pl <- pl + geom_text(data=Book12, aes(Faculty, Percentage, size=Percentage, label = paste0(Faculty, '\n', scales::comma(Total)))) 
++ theme_classic() 
++ theme(legend.position="none") 
++ theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) 
+pl + theme(plot.margin = unit(c(0.01,0.01,0.01,0.01), "cm")) 
++ theme(axis.line=element_blank()) 
+pl2 <- ggplot() 
++ geom_polygon(data = Book11, aes(Level,Percentage, group = id, fill = as.factor(id))) 
+pl2 <- 
+pl2 
++ geom_text(data=Book11, aes(Level, Percentage, size=Percentage, label = paste0(Level, '\n', scales::comma(Total)))) 
++ theme_classic() 
++ theme(legend.position="none") 
++ theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) 
+pl2 
